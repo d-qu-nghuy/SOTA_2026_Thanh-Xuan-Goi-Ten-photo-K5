@@ -71,7 +71,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 statusTools.classList.remove('hidden');
                 
                 document.getElementById('map').style.height = "280px"; 
-                if(map) map.invalidateSize();
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                }, 400);
 
                 document.getElementById('display-name').innerText = userData.fullname;
                 document.getElementById('display-mssv').innerText = userData.studentid;
@@ -99,7 +101,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('action-ui').classList.add('hidden');
                 statusTools.classList.add('hidden');
                 document.getElementById('map').style.height = "450px"; 
-                if(map) map.invalidateSize();
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                }, 400);
             }
         }, 100);
     }
@@ -305,7 +309,9 @@ window.selectLocation = function(locId) {
     });
 
     document.getElementById('map').style.height = "280px"; 
-    map.invalidateSize(); 
+    setTimeout(() => {
+        if (map) map.invalidateSize();
+    }, 400);
 
     document.getElementById('display-name').innerText = userData.fullname;
     document.getElementById('display-mssv').innerText = userData.studentid;

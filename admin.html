@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar K5 - Trạm Điều Khiển 🛰️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Be Vietnam Pro', sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; padding: 20px; padding-bottom: 80px; }
+
+        button, .chip { 
+            touch-action: manipulation; 
+            -webkit-user-select: none; 
+            user-select: none; 
+        }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: #ea580c; font-weight: 800; font-size: 24px; text-transform: uppercase; }
+        .header p { color: #94a3b8; font-size: 13px; }
+
+        /* Khung Điều Khiển GPS & Trạng Thái */
+        .control-panel { background: #1e293b; padding: 20px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 25px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        .control-panel label { display: block; font-size: 13px; color: #cbd5e1; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+        
+        /* Hiển thị trạng thái đang Live */
+        .live-status-box { background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #10b981; }
+        .live-status-box strong { color: #fff; font-weight: 800; display: block; margin-top: 4px; }
+
+        /* Cụm nhập liệu & Nút Gửi */
+        .status-input-group { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; align-items: center; }
+        .status-input { flex: 1; min-width: 0; padding: 12px 15px; background: #0f172a; border: 1px solid #475569; color: #fff; border-radius: 8px; font-size: 14px; }
+        .status-input:focus { outline: none; border-color: #ea580c; }
+        
+        /* Định dạng nút Xóa và Nút Gửi */
+        .btn-clear { background: #475569; color: white; border: none; border-radius: 8px; padding: 12px 16px; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 15px; touch-action: manipulation; flex-shrink: 0; }
+        .btn-clear:active { transform: scale(0.95); background: #ef4444; }
+        
+        .btn-send { background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 12px 18px; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap; font-size: 14px; touch-action: manipulation; flex-shrink: 0; }
+        .btn-send:active { transform: scale(0.95); }
+        .btn-send.success { background: #10b981; }
+        
+        .btn-send { background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap; font-size: 14px; touch-action: manipulation; }
+        .btn-send:active { transform: scale(0.95); }
+        .btn-send.success { background: #10b981; }
+
+        /* Nút tùy chọn nhanh & Danh mục mở rộng */
+        .quick-messages { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .chip { background: #334155; color: #cbd5e1; border: 1px solid #475569; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        .chip:active { transform: scale(0.95); background: #ea580c; color: #fff; border-color: #ea580c; }
+        
+        .accordion-parent { width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 12px 15px; border-radius: 8px; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; transition: 0.2s; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        .accordion-parent:hover { background: #334155; }
+        .accordion-parent.active { background: #ea580c; color: #fff; border-color: #ea580c; }
+        .accordion-parent.active i { transform: rotate(180deg); }
+        .accordion-child { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; padding: 0 5px; }
+        .accordion-child.hidden { display: none; }
+        
+        .btn-broadcast { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-broadcast.active { background: #ef4444; animation: pulseRed 1.5s infinite alternate; }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 100% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } }
+
+        /* Danh sách Hàng đợi */
+        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
+        .queue-header h2 { font-size: 18px; color: #facc15; }
+        .queue-count { background: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+
+        .student-card { background: #1e293b; border-left: 5px solid #3b82f6; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .student-info h3 { font-size: 16px; color: #fff; margin-bottom: 5px; }
+        .student-info p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+        .student-info .highlight { color: #fcd34d; font-weight: 700; }
+        
+        .btn-done { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; transition: all 0.2s; }
+        .btn-done:active { transform: scale(0.9); background: #10b981; color: #fff; }
+        
+        .empty-state { text-align: center; color: #64748b; padding: 30px 0; font-size: 14px; }
+
+        /* =========================================
+           TỐI ƯU HÓA DI ĐỘNG: KHÓA LƯỚT NGANG
+        ========================================= */
+        @media screen and (max-width: 768px) {
+            html, body {
+                max-width: 100vw;
+                overflow-x: hidden !important; 
+                overscroll-behavior-x: none;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>SOTA Admin <i class="fa-solid fa-satellite-dish"></i></h1>
+    </div>
+
+    <div class="control-panel">
+        <label><i class="fa-solid fa-bullhorn"></i> Thông điệp gửi K5</label>
+        
+        <div class="live-status-box">
+            <i class="fa-solid fa-satellite-dish fa-beat"></i> Đang hiển thị trực tiếp:
+            <strong id="live-status-text">😴😴😴</strong>
+        </div>
+
+        <div class="status-input-group">
+            <input type="text" id="admin-status" class="status-input" placeholder="Gõ trạng thái để cập nhật..." value="">
+            <button id="btn-clear-status" class="btn-clear" title="Xóa nhanh"><i class="fa-solid fa-eraser"></i></button>
+            <button id="btn-send-status" class="btn-send"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+        </div>
+
+        <div class="accordion-container">
+            <!-- 1. Tác nghiệp - Hà Đông -->
+            <button class="accordion-parent" data-target="tn-hd">Mình đang tác nghiệp tại [Phường Hà Đông] 📸 <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="accordion-child hidden" id="tn-hd">
+                <button class="chip">Mình đang tác nghiệp tại Cổng Chính 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Căng Tin 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Tố Hữu #1 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Tố Hữu #2 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Tố Hữu #3 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Nguyễn Văn Luyện #1 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Nguyễn Văn Luyện #2 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Đường Nguyễn Văn Luyện #3 📸</button>
+            </div>
+
+            <!-- 2. Tác nghiệp - Tùng Thiện -->
+            <button class="accordion-parent" data-target="tn-tt">Mình đang tác nghiệp tại [Phường Tùng Thiện] 📸 <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="accordion-child hidden" id="tn-tt">
+                <button class="chip">Mình đang tác nghiệp tại Nhà Ăn 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Cầu Thang #1 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Cầu Thang #2 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Tòa Nhà #1 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Tòa Nhà #2 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Giảng Đường 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Sân Bóng Đá 📸</button>
+                <button class="chip">Mình đang tác nghiệp tại Sân Bóng Chuyền 📸</button>
+            </div>
+
+            <!-- 3. Di chuyển - Hà Đông -->
+            <button class="accordion-parent" data-target="dc-hd">Đang di chuyển đến mốc [Phường Hà Đông] tiếp theo 🚶 <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="accordion-child hidden" id="dc-hd">
+                <button class="chip">Đang di chuyển đến mốc Cổng Chính tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Căng Tin tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đường Tố Hữu #1 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đường Tố Hữu #2 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đường Tố Hữu #3 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đ.Nguyễn Văn Luyện #1 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đ.Nguyễn Văn Luyện #2 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Đ.Nguyễn Văn Luyện #3 tiếp theo 🚶</button>
+            </div>
+
+            <!-- 4. Di chuyển - Tùng Thiện -->
+            <button class="accordion-parent" data-target="dc-tt">Đang di chuyển đến mốc [Phường Tùng Thiện] tiếp theo 🚶 <i class="fa-solid fa-chevron-down"></i></button>
+            <div class="accordion-child hidden" id="dc-tt">
+                <button class="chip">Đang di chuyển đến mốc Nhà Ăn tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Cầu Thang #1 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Cầu Thang #2 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Tòa Nhà #1 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Tòa Nhà #2 tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Giảng Đường tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Sân Bóng Đá tiếp theo 🚶</button>
+                <button class="chip">Đang di chuyển đến mốc Sân Bóng Chuyền tiếp theo 🚶</button>
+            </div>
+            
+        </div>
+        
+        <button id="btn-broadcast" class="btn-broadcast">
+            <i class="fa-solid fa-location-crosshairs"></i> BẬT PHÁT SÓNG RADAR
+        </button>
+        <p id="gps-log" style="font-size: 11px; color: #64748b; text-align: center; margin-top: 10px;">GPS đang tắt</p>
+    </div>
+
+    <div class="queue-section">
+        <div class="queue-header">
+            <h2>Danh sách chờ chụp</h2>
+            <span class="queue-count" id="queue-count">0 sinh viên</span>
+        </div>
+        <div id="queue-list">
+            <div class="empty-state">Chưa có sinh viên nào đăng ký...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrY4fM5QvKYPnSkbMWZ9hsRgV23rf7mGQ",
+            authDomain: "media-queue-app-978f8.firebaseapp.com",
+            databaseURL: "https://media-queue-app-978f8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "media-queue-app-978f8",
+            storageBucket: "media-queue-app-978f8.firebasestorage.app",
+            messagingSenderId: "730748075319",
+            appId: "1:730748075319:web:b293c6bba8f3f91dc82eb2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const connectedRef = ref(db, '.info/connected');
+        const photographerRef = ref(db, 'photographer');
+
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                update(photographerRef, { isOnline: true });
+                
+                onDisconnect(photographerRef).update({ 
+                    isOnline: false, 
+                    status: "😴😴😴" 
+                });
+            }
+        });
+
+        let watchId = null;
+        let confirmedStatus = "😴😴😴"; 
+
+        const btnBroadcast = document.getElementById('btn-broadcast');
+        const statusInput = document.getElementById('admin-status');
+        const btnSendStatus = document.getElementById('btn-send-status');
+        const btnClearStatus = document.getElementById('btn-clear-status'); 
+        const quickChips = document.querySelectorAll('.chip');
+        const gpsLog = document.getElementById('gps-log');
+        const queueList = document.getElementById('queue-list');
+        const queueCount = document.getElementById('queue-count');
+        const liveStatusText = document.getElementById('live-status-text');
+
+        onValue(ref(db, 'photographer/status'), (snapshot) => {
+            const serverStatus = snapshot.val();
+            if (serverStatus) {
+                liveStatusText.innerText = serverStatus;
+                confirmedStatus = serverStatus; 
+            } else {
+                liveStatusText.innerText = "😴😴😴";
+            }
+        });
+
+        function sendStatusMessage(msg) {
+            confirmedStatus = msg; 
+
+            update(photographerRef, {
+                status: confirmedStatus,
+                isOnline: true 
+            }).then(() => {
+                const originalHtml = btnSendStatus.innerHTML;
+                btnSendStatus.innerHTML = '<i class="fa-solid fa-check"></i> Đã gửi';
+                btnSendStatus.classList.add('success');
+                setTimeout(() => {
+                    btnSendStatus.innerHTML = originalHtml;
+                    btnSendStatus.classList.remove('success');
+                }, 2000);
+            }).catch(err => alert("Lỗi khi gửi: " + err));
+        }
+
+        btnSendStatus.addEventListener('click', () => {
+            const msg = statusInput.value.trim();
+            if(msg) sendStatusMessage(msg);
+        });
+
+                btnClearStatus.addEventListener('click', () => {
+                    statusInput.value = ''; 
+                    statusInput.focus(); 
+                });
+                
+        quickChips.forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                statusInput.value = e.target.innerText; 
+            });
+        });
+
+        const accordionParents = document.querySelectorAll('.accordion-parent');
+        accordionParents.forEach(parent => {
+            parent.addEventListener('click', () => {
+                const targetId = parent.getAttribute('data-target');
+                const targetChild = document.getElementById(targetId);
+                const isActive = parent.classList.contains('active');
+
+                document.querySelectorAll('.accordion-child').forEach(child => child.classList.add('hidden'));
+                accordionParents.forEach(btn => btn.classList.remove('active'));
+
+                if (!isActive) {
+                    parent.classList.add('active');
+                    targetChild.classList.remove('hidden');
+                }
+            });
+        });
+
+        btnBroadcast.addEventListener('click', () => {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                btnBroadcast.classList.remove('active');
+                btnBroadcast.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> BẬT PHÁT SÓNG RADAR';
+                gpsLog.innerText = "GPS đã tắt";
+                
+                update(photographerRef, { lat: null, lng: null }); 
+            } else {
+                if (!navigator.geolocation) {
+                    alert("Điện thoại của bạn không hỗ trợ GPS!"); return;
+                }
+                
+                btnBroadcast.classList.add('active');
+                btnBroadcast.innerHTML = '<i class="fa-solid fa-tower-broadcast fa-beat"></i> ĐANG PHÁT SÓNG LIVE...';
+                
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        gpsLog.innerText = `Cập nhật lúc: ${new Date().toLocaleTimeString()} (Sai số: ${Math.round(position.coords.accuracy)}m)`;
+                        
+                        update(photographerRef, {
+                            lat: lat,
+                            lng: lng,
+                            status: confirmedStatus
+                        });
+                    },
+                    (error) => {
+                        alert("Lỗi GPS: Vui lòng cấp quyền truy cập vị trí cho trình duyệt!");
+                        btnBroadcast.click();
+                    },
+                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+                );
+            }
+        });
+
+        // --- TÍNH NĂNG: QUẢN LÝ HÀNG ĐỢI ---
+        onValue(ref(db, 'queue'), (snapshot) => {
+            queueList.innerHTML = '';
+            const data = snapshot.val();
+            
+            if (data) {
+                const students = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => a.timestamp - b.timestamp);
+
+                queueCount.innerText = `${students.length} sinh viên`;
+
+                students.forEach((student, index) => {
+                    let locName = student.locationId;
+                    if(locName === 'moc1') locName = "Cổng Chính";
+                    if(locName === 'moc2') locName = "Căng Tin";
+                    if(locName === 'moc3') locName = "Đường Tố Hữu #1";
+                    if(locName === 'moc4') locName = "Đường Tố Hữu #2";
+                    if(locName === 'moc5') locName = "Đường Tố Hữu #3";
+                    if(locName === 'moc6') locName = "Đường Nguyễn Văn Luyện #1";
+                    if(locName === 'moc7') locName = "Đường Nguyễn Văn Luyện #2";
+                    if(locName === 'moc8') locName = "Đường Nguyễn Văn Luyện #3";
+                    if(locName === 'moc9') locName = "Nhà Ăn";
+                    if(locName === 'moc10') locName = "Cầu Thang #1";
+                    if(locName === 'moc11') locName = "Cầu Thang #2";
+                    if(locName === 'moc12') locName = "Tòa Nhà TT1";
+                    if(locName === 'moc13') locName = "Tòa Nhà TT2";
+                    if(locName === 'moc14') locName = "Giảng Đường";
+                    if(locName === 'moc15') locName = "Sân Bóng Đá";
+                    if(locName === 'moc16') locName = "Sân Bóng Chuyền";
+
+                    const card = document.createElement('div');
+                    card.className = 'student-card';
+                    card.innerHTML = `
+                        <div class="student-info">
+                            <h3>#${index + 1}. ${student.fullname}</h3>
+                            <p><i class="fa-solid fa-id-card"></i> ${student.studentid} | <i class="fa-brands fa-whatsapp"></i> ${student.zalo}</p>
+                            <p><i class="fa-solid fa-map-pin" style="color:#ef4444;"></i> Đang đợi tại: <span class="highlight">${locName}</span></p>
+                        </div>
+                        <button class="btn-done" data-id="${student.id}" title="Đã chụp xong">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    `;
+                    queueList.appendChild(card);
+                });
+
+                document.querySelectorAll('.btn-done').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const studentId = e.currentTarget.getAttribute('data-id');
+                        
+                        if(confirm("Xác nhận đã chụp xong cho sinh viên này?")) {
+                            const studentData = data[studentId]; // Lấy data trực tiếp từ Firebase snapshot
+                            const currentBtn = e.currentTarget;
+                            
+                            currentBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                            currentBtn.style.pointerEvents = 'none';
+
+                            // Gửi data sang Google Sheets
+                            fetch('https://script.google.com/macros/s/AKfycbxxTsJKUegYGG2oAx3bahY1P7Z5y2SgzpjBeIoXFg4ZeH0nf9637yteHOMATay-rMA/exec', {
+                                method: 'POST',
+                                mode: 'no-cors', 
+                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                body: JSON.stringify({
+                                    fullname: studentData.fullname,
+                                    studentid: studentData.studentid,
+                                    zalo: studentData.zalo,
+                                    locationId: studentData.locationId
+                                })
+                            }).then(() => {
+                                remove(ref(db, 'queue/' + studentId)); 
+                            }).catch(err => {
+                                alert("Lỗi lưu Sheets: " + err);
+                                currentBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                                currentBtn.style.pointerEvents = 'auto';
+                            });
+                        }
+                    });
+                });
+
+            } else {
+                queueCount.innerText = `0 sinh viên`;
+                queueList.innerHTML = '<div class="empty-state">Chưa có sinh viên nào đăng ký...</div>';
+            }
+        });
+    </script>
+</body>
+</html>

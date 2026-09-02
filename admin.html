@@ -74,6 +74,11 @@
         .btn-done { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; transition: all 0.2s; }
         .btn-done:active { transform: scale(0.9); background: #10b981; color: #fff; }
         
+        .action-btns { display: flex; gap: 10px; align-items: center; }
+        
+        .btn-cancel-admin { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; transition: all 0.2s; }
+        .btn-cancel-admin:active { transform: scale(0.9); background: #ef4444; color: #fff; }
+
         .empty-state { text-align: center; color: #64748b; padding: 30px 0; font-size: 14px; }
 
         /* =========================================
@@ -362,9 +367,14 @@
                             <p><i class="fa-solid fa-id-card"></i> ${student.studentid} | <i class="fa-brands fa-whatsapp"></i> ${student.zalo}</p>
                             <p><i class="fa-solid fa-map-pin" style="color:#ef4444;"></i> Đang đợi tại: <span class="highlight">${locName}</span></p>
                         </div>
-                        <button class="btn-done" data-id="${student.id}" title="Đã chụp xong">
-                            <i class="fa-solid fa-check"></i>
-                        </button>
+                        <div class="action-btns">
+                            <button class="btn-cancel-admin" data-id="${student.id}" title="Hủy đăng ký ảo">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button class="btn-done" data-id="${student.id}" title="Đã chụp xong">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                        </div>
                     `;
                     queueList.appendChild(card);
                 });
@@ -398,6 +408,16 @@
                                 currentBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
                                 currentBtn.style.pointerEvents = 'auto';
                             });
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.btn-cancel-admin').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const studentId = e.currentTarget.getAttribute('data-id');
+                        
+                        if(confirm("Hủy lượt sinh viên này? (Dữ liệu sẽ KHÔNG được lưu vào Google Sheets)")) {
+                            remove(ref(db, 'queue/' + studentId));
                         }
                     });
                 });
